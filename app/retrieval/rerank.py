@@ -33,7 +33,7 @@ class ColbertReranker:
             dtype = torch.float16 if self.device == "cuda" else torch.float32
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_id)
             self.backbone = AutoModel.from_pretrained(self.model_id, torch_dtype=dtype).to(self.device).eval()
-        state = torch.load(hf_hub_download(self.model_id, "colbert_linear.pt"), map_location="cpu")
+        state = torch.load(hf_hub_download(self.model_id, "colbert_linear.pt"), map_location="cpu", weights_only=True)
         dim = state["weight"].shape[0]
         self.linear = torch.nn.Linear(self.backbone.config.hidden_size, dim)
         self.linear.load_state_dict(state)

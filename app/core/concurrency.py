@@ -20,7 +20,7 @@ def _semaphore() -> asyncio.Semaphore:
     return _sem
 
 
-async def acquire_llm_slot() -> None:
+async def acquire_llm_slot() -> asyncio.Semaphore:
     s = get_platform_settings()
     sem = _semaphore()
     try:
@@ -29,17 +29,18 @@ async def acquire_llm_slot() -> None:
         obs.LLM_SLOT_REJECTIONS.inc()
         raise HTTPException(503, "The model is at capacity. Retry shortly.", headers={"Retry-After": "5"}) from None
     obs.LLM_INFLIGHT.inc()
+    return sem
 
 
-def release_llm_slot() -> None:
-    _semaphore().release()
+def release_llm_slot(sem: asyncio.Semaphore | None = None) -> None:
+    (sem if sem is not None else _semaphore()).release()
     obs.LLM_INFLIGHT.dec()
 
 
 @contextlib.asynccontextmanager
 async def llm_slot():
-    await acquire_llm_slot()
+    sem = await acquire_llm_slot()
     try:
         yield
     finally:
-        release_llm_slot()
+        release_llm_slot(sem)

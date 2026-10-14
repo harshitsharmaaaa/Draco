@@ -143,14 +143,15 @@ def inspect_pdf(
     config = config or DetectorConfig()
 
     try:
-        reader = PdfReader(str(pdf_path))
-        if reader.is_encrypted and not reader.decrypt(""):
-            raise PdfDetectionError("PDF is encrypted and requires a password")
-        page_count = len(reader.pages)
-        if page_count == 0:
-            raise PdfDetectionError("PDF contains no pages")
-        indices = _sample_indices(page_count, config.max_pages)
-        pages = [_classify_page(i, reader.pages[i], config) for i in indices]
+        with open(pdf_path, "rb") as f:
+            reader = PdfReader(f)
+            if reader.is_encrypted and not reader.decrypt(""):
+                raise PdfDetectionError("PDF is encrypted and requires a password")
+            page_count = len(reader.pages)
+            if page_count == 0:
+                raise PdfDetectionError("PDF contains no pages")
+            indices = _sample_indices(page_count, config.max_pages)
+            pages = [_classify_page(i, reader.pages[i], config) for i in indices]
     except PdfDetectionError:
         raise
     except Exception as exc:
