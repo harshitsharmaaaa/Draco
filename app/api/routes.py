@@ -42,6 +42,9 @@ async def upload_document(file: UploadFile = File(...)):
     safe_filename = Path(file.filename).name
     if not safe_filename or not safe_filename.strip() or safe_filename in (".", ".."):
         raise HTTPException(400, "Filename is required")
+    if len(safe_filename) > 100:
+        suffix = Path(safe_filename).suffix[:16]
+        safe_filename = safe_filename[: 100 - len(suffix)] + suffix
     if Path(safe_filename).suffix.lower() != ".pdf":
         # The worker only converts PDFs; failing here beats queueing a job that is certain to fail.
         raise HTTPException(415, "Only PDF files are supported")

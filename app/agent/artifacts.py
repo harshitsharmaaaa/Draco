@@ -39,6 +39,8 @@ class ArtifactStore:
         return p
 
     def save(self, *, user_id, kind, fmt, title, data: bytes, meta=None) -> dict:
+        if fmt not in MIME:
+            raise ArtifactError(f"unsupported artifact format: {fmt!r}", "invalid_input")
         if not data:
             raise ArtifactError("generator produced no data")
         if len(data) > self.max_bytes:

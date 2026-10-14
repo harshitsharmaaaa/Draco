@@ -123,10 +123,10 @@ async def download_artifact(artifact_id: str, user: str = Depends(read_user), ru
 
 
 class FeedbackBody(BaseModel):
-    target_type: str
-    target_id: str
-    rating: int
-    comment: str | None = None
+    target_type: str = Field(pattern="^(answer|artifact|source)$")
+    target_id: str = Field(min_length=1, max_length=256)
+    rating: int = Field(ge=1, le=5)
+    comment: str | None = Field(default=None, max_length=2000)
 
 
 @router.post("/feedback")
