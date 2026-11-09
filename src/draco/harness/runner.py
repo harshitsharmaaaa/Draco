@@ -175,6 +175,8 @@ class Harness:
         timeout = timeout_s if timeout_s is not None else self.settings.default_timeout_s
         if rec.tenant_id is not None and (identity is None or identity.tenant_id != rec.tenant_id):
             raise ContractError(f"unknown execution '{execution_id}'")  # same answer as a missing id: no cross-tenant probing
+        if rec.user_id is not None and (identity is None or identity.subject != rec.user_id):
+            raise ContractError(f"unknown execution '{execution_id}'")  # prevent same-tenant users from resuming another user's execution
         ctx = ExecutionContext(
             execution_id=rec.execution_id, parent_execution_id=rec.parent_execution_id, session_id=rec.session_id,
             identity=identity, user_id=identity.subject if identity else rec.user_id, tenant_id=rec.tenant_id,

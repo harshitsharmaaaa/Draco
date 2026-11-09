@@ -358,3 +358,24 @@ def test_redactor_secrets_tokens_and_truncation():
                                        "nested": {"Password": "p", "n": [1, 2]}, "obj": object()})
     assert r["api_key"] == "<redacted>" and "abcdefgh" not in r["note"] and r["x"].startswith("yyyyyyyyyy...")
     assert r["nested"] == {"Password": "<redacted>", "n": [1, 2]} and r["obj"] == "<object>"
+
+
+async def test_resume_requires_original_subject_within_same_tenant():
+    from draco.core import Identity
+
+    h = make()
+    owner = Identity(subject="alice", tenant_id="acme")
+    intruder = Identity(subject="bob", tenant_id="acme")
+
+    async def fail(ctx, x):
+        raise RuntimeError("interrupted")
+
+    h.register("fail", fail)
+    r = await h.run("fail", identity=owner)
+    assert r.status == Status.failed
+
+    with pytest.raises(ContractError, match="unknown execution"):
+        await h.resume(r.execution_id, identity=intruder)
+
+    resumed = await h.resume(r.execution_id, identity=owner)
+    assert resumed.status == Status.failed
